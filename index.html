@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Jack Flook - Developer, Gamer, Sports Enthusiast">
+    <title>Jack Flook</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">JF</div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#game" class="nav-link">Game</a>
+            </div>
+            <button class="menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-image-container">
+                <img src="jack.jpg" alt="Jack Flook" class="hero-image" id="heroImage">
+                <div class="image-placeholder" id="imagePlaceholder">
+                    <p>Add your image as "jack.jpg"</p>
+                </div>
+            </div>
+            <h1 class="hero-title">
+                <span class="title-line">Jack</span>
+                <span class="title-line">Flook</span>
+            </h1>
+            <p class="hero-subtitle">Developer • Gamer • Sports Enthusiast</p>
+            <div class="hero-scroll">
+                <span>Scroll to explore</span>
+                <div class="scroll-arrow">↓</div>
+            </div>
+        </div>
+        <div class="hero-background"></div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title">About Me</h2>
+            <div class="about-grid">
+                <div class="about-card" data-animate>
+                    <div class="card-icon">🎮</div>
+                    <h3>Gaming</h3>
+                    <p>Passionate about realistic FPS games, especially ARMA. Love the tactical gameplay and immersive experiences.</p>
+                </div>
+                <div class="about-card" data-animate>
+                    <div class="card-icon">⚽</div>
+                    <h3>Sports</h3>
+                    <p>Played soccer and cricket. Enjoy the strategy, teamwork, and competitive spirit of both sports.</p>
+                </div>
+                <div class="about-card" data-animate>
+                    <div class="card-icon">🍔</div>
+                    <h3>Fast Food</h3>
+                    <p>Big fan of fast food. Always on the lookout for the best burgers, fries, and comfort food.</p>
+                </div>
+                <div class="about-card" data-animate>
+                    <div class="card-icon">💻</div>
+                    <h3>Computers</h3>
+                    <p>Work with computers daily. Love building, coding, and exploring new technologies.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Section -->
+    <section id="game" class="game-section">
+        <div class="container">
+            <h2 class="section-title">FPS Arena</h2>
+            <p class="game-description">Test your skills in this mobile-friendly FPS game!</p>
+            
+            <div class="game-container">
+                <div class="game-stats">
+                    <div class="stat">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="score">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Health:</span>
+                        <span class="stat-value" id="health">100</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Wave:</span>
+                        <span class="stat-value" id="wave">1</span>
+                    </div>
+                </div>
+                
+                <canvas id="gameCanvas"></canvas>
+                
+                <div class="game-controls">
+                    <div class="control-pad">
+                        <div class="movement-controls">
+                            <button class="control-btn" id="moveUp">↑</button>
+                            <div class="horizontal-controls">
+                                <button class="control-btn" id="moveLeft">←</button>
+                                <button class="control-btn" id="moveRight">→</button>
+                            </div>
+                            <button class="control-btn" id="moveDown">↓</button>
+                        </div>
+                    </div>
+                    <div class="shoot-control">
+                        <button class="shoot-btn" id="shootBtn">
+                            <span>🔫</span>
+                            <span class="btn-label">Shoot</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="game-buttons">
+                    <button class="game-btn" id="startBtn">Start Game</button>
+                    <button class="game-btn" id="pauseBtn" style="display: none;">Pause</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Jack Flook. Built with passion for gaming and development.</p>
+        </div>
+    </footer>
+
+    <script src="game.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
