@@ -26,9 +26,14 @@ class FPSGame {
         
         // Enemies
         this.enemies = [];
-        this.enemySpeed = 1.5;
+        this.enemySpeed = 1.0; // Reduced from 1.5
         this.enemySpawnRate = 0.02;
         this.enemiesKilled = 0;
+        
+        // Touch movement
+        this.touchStartX = 0;
+        this.touchStartY = 0;
+        this.isMoving = false;
         
         // Particles
         this.particles = [];
@@ -60,7 +65,7 @@ class FPSGame {
     }
     
     setupControls() {
-        // Keyboard controls
+        // Keyboard controls (WASD for desktop)
         document.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
         });
@@ -69,49 +74,18 @@ class FPSGame {
             this.keys[e.key.toLowerCase()] = false;
         });
         
-        // Touch controls
-        const moveButtons = {
-            moveUp: { x: 0, y: -1 },
-            moveDown: { x: 0, y: 1 },
-            moveLeft: { x: -1, y: 0 },
-            moveRight: { x: 1, y: 0 }
-        };
-        
-        Object.keys(moveButtons).forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    const dir = moveButtons[id];
-                    this.keys[`move${id.replace('move', '')}`] = true;
-                });
-                
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    const dir = moveButtons[id];
-                    this.keys[`move${id.replace('move', '')}`] = false;
-                });
-                
-                btn.addEventListener('mousedown', () => {
-                    this.keys[`move${id.replace('move', '')}`] = true;
-                });
-                
-                btn.addEventListener('mouseup', () => {
-                    this.keys[`move${id.replace('move', '')}`] = false;
-                });
-            }
-        });
-        
         // Shoot button
         const shootBtn = document.getElementById('shootBtn');
         if (shootBtn) {
             shootBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 this.keys[' '] = true;
             });
             
             shootBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 this.keys[' '] = false;
             });
             
@@ -124,14 +98,60 @@ class FPSGame {
             });
         }
         
-        // Canvas touch for aiming
-        this.canvas.addEventListener('touchmove', (e) => {
+        // Canvas touch for movement, aiming, and shooting
+        this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const rect = this.canvas.getBoundingClientRect();
             const touch = e.touches[0];
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
+            
+            // Store touch start position for movement
+            this.touchStartX = x;
+            this.touchStartY = y;
+            this.isMoving = true;
+            
+            // Update aim
             this.updatePlayerAngle(x, y);
+        });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!this.isMoving) return;
+            
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            // Update aim
+            this.updatePlayerAngle(x, y);
+            
+            // Move player towards touch point (left side of screen)
+            const canvasWidth = rect.width;
+            if (x < canvasWidth * 0.7) { // Left 70% for movement
+                const dx = x - this.player.x;
+                const dy = y - this.player.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 5) { // Only move if finger is away from player
+                    const moveSpeed = Math.min(dist * 0.1, this.player.speed);
+                    this.player.x += (dx / dist) * moveSpeed;
+                    this.player.y += (dy / dist) * moveSpeed;
+                    
+                    // Keep player in bounds
+                    this.player.x = Math.max(this.player.size, Math.min(this.canvas.width - this.player.size, this.player.x));
+                    this.player.y = Math.max(this.player.size, Math.min(this.canvas.height - this.player.size, this.player.y));
+                }
+            } else {
+                // Right side - shoot
+                this.shoot();
+            }
+        });
+        
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.isMoving = false;
         });
         
         this.canvas.addEventListener('mousemove', (e) => {
@@ -139,6 +159,13 @@ class FPSGame {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             this.updatePlayerAngle(x, y);
+        });
+        
+        // Canvas click for shooting on desktop
+        this.canvas.addEventListener('click', (e) => {
+            if (this.gameState === 'playing') {
+                this.shoot();
+            }
         });
     }
     
@@ -160,47 +187,80 @@ class FPSGame {
         this.player.x = this.canvas.width / 2;
         this.player.y = this.canvas.height / 2;
         this.updateUI();
+        
+        // Show/hide buttons
+        const startBtn = document.getElementById('startBtn');
+        const shootBtn = document.getElementById('shootBtn');
+        if (startBtn) startBtn.style.display = 'none';
+        if (shootBtn) shootBtn.style.display = 'flex';
+        
         this.gameLoop();
     }
     
-    pause() {
-        if (this.gameState === 'playing') {
-            this.gameState = 'paused';
-            if (this.animationId) {
-                cancelAnimationFrame(this.animationId);
-            }
-        } else if (this.gameState === 'paused') {
-            this.gameState = 'playing';
-            this.gameLoop();
+    resetToMenu() {
+        this.gameState = 'menu';
+        const startBtn = document.getElementById('startBtn');
+        const shootBtn = document.getElementById('shootBtn');
+        if (startBtn) startBtn.style.display = 'inline-block';
+        if (shootBtn) shootBtn.style.display = 'none';
+    }
+    
+    saveScore(score) {
+        const scores = this.getLeaderboard();
+        const newScore = {
+            score: score,
+            date: new Date().toLocaleDateString(),
+            timestamp: Date.now()
+        };
+        
+        scores.push(newScore);
+        scores.sort((a, b) => b.score - a.score); // Sort descending
+        scores.splice(10); // Keep top 10
+        
+        localStorage.setItem('fpsArenaLeaderboard', JSON.stringify(scores));
+        this.updateLeaderboard();
+    }
+    
+    getLeaderboard() {
+        const stored = localStorage.getItem('fpsArenaLeaderboard');
+        return stored ? JSON.parse(stored) : [];
+    }
+    
+    updateLeaderboard() {
+        const leaderboardList = document.getElementById('leaderboardList');
+        if (!leaderboardList) return;
+        
+        const scores = this.getLeaderboard();
+        
+        if (scores.length === 0) {
+            leaderboardList.innerHTML = '<p class="no-scores">No scores yet. Be the first!</p>';
+            return;
         }
+        
+        leaderboardList.innerHTML = scores.map((entry, index) => {
+            const rank = index + 1;
+            const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+            return `
+                <div class="leaderboard-item ${rankClass}">
+                    <span class="leaderboard-rank ${rankClass}">#${rank}</span>
+                    <div style="flex: 1; margin-left: 15px;">
+                        <div class="leaderboard-score">${entry.score.toLocaleString()} points</div>
+                        <div class="leaderboard-date">${entry.date}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
     
     update(deltaTime) {
         if (this.gameState !== 'playing') return;
         
-        // Update player movement
-        let moveX = 0;
-        let moveY = 0;
-        
-        if (this.keys['w'] || this.keys['moveup']) moveY -= 1;
-        if (this.keys['s'] || this.keys['movedown']) moveY += 1;
-        if (this.keys['a'] || this.keys['moveleft']) moveX -= 1;
-        if (this.keys['d'] || this.keys['moveright']) moveX += 1;
-        
-        // Normalize diagonal movement
-        if (moveX !== 0 && moveY !== 0) {
-            moveX *= 0.707;
-            moveY *= 0.707;
-        }
-        
-        this.player.x += moveX * this.player.speed;
-        this.player.y += moveY * this.player.speed;
-        
-        // Keep player in bounds
+        // Player movement is handled by touch controls in setupControls()
+        // Keep player in bounds (already done in touchmove, but double-check)
         this.player.x = Math.max(this.player.size, Math.min(this.canvas.width - this.player.size, this.player.x));
         this.player.y = Math.max(this.player.size, Math.min(this.canvas.height - this.player.size, this.player.y));
         
-        // Shooting
+        // Shooting (spacebar for desktop, button/touch for mobile)
         if (this.keys[' ']) {
             this.shoot();
         }
@@ -272,14 +332,18 @@ class FPSGame {
         // Check wave progression
         if (this.enemiesKilled >= this.wave * 10) {
             this.wave++;
-            this.enemySpeed += 0.2;
+            this.enemySpeed += 0.15; // Reduced from 0.2
             this.enemySpawnRate += 0.005;
             this.enemiesKilled = 0;
         }
         
         // Check game over
         if (this.health <= 0) {
-            this.gameState = 'menu';
+            // Save score to leaderboard
+            if (this.score > 0) {
+                this.saveScore(this.score);
+            }
+            this.resetToMenu();
             this.updateUI();
             if (this.animationId) {
                 cancelAnimationFrame(this.animationId);
@@ -356,10 +420,6 @@ class FPSGame {
         if (this.gameState === 'menu') {
             this.renderMenu();
             return;
-        }
-        
-        if (this.gameState === 'paused') {
-            this.renderPaused();
         }
         
         // Draw grid background
@@ -453,16 +513,6 @@ class FPSGame {
         this.ctx.fillText('Click Start to begin!', this.canvas.width / 2, this.canvas.height / 2 + 20);
     }
     
-    renderPaused() {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        this.ctx.fillStyle = '#00d4ff';
-        this.ctx.font = 'bold 32px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
-    }
-    
     updateUI() {
         document.getElementById('score').textContent = this.score;
         document.getElementById('health').textContent = Math.max(0, Math.floor(this.health));
@@ -487,14 +537,20 @@ let game;
 document.addEventListener('DOMContentLoaded', () => {
     game = new FPSGame('gameCanvas');
     
-    document.getElementById('startBtn').addEventListener('click', () => {
-        game.start();
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('pauseBtn').style.display = 'inline-block';
-    });
+    // Set initial button visibility
+    const startBtn = document.getElementById('startBtn');
+    const shootBtn = document.getElementById('shootBtn');
     
-    document.getElementById('pauseBtn').addEventListener('click', () => {
-        game.pause();
-    });
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (shootBtn) shootBtn.style.display = 'none';
+    
+    // Initialize leaderboard
+    game.updateLeaderboard();
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            game.start();
+        });
+    }
 });
 

@@ -98,30 +98,23 @@
                     </div>
                 </div>
                 
-                <canvas id="gameCanvas"></canvas>
-                
-                <div class="game-controls">
-                    <div class="control-pad">
-                        <div class="movement-controls">
-                            <button class="control-btn" id="moveUp">↑</button>
-                            <div class="horizontal-controls">
-                                <button class="control-btn" id="moveLeft">←</button>
-                                <button class="control-btn" id="moveRight">→</button>
-                            </div>
-                            <button class="control-btn" id="moveDown">↓</button>
-                        </div>
-                    </div>
-                    <div class="shoot-control">
-                        <button class="shoot-btn" id="shootBtn">
+                <div class="canvas-wrapper">
+                    <canvas id="gameCanvas"></canvas>
+                    <div class="canvas-overlay">
+                        <button class="game-btn overlay-btn" id="startBtn">Start Game</button>
+                        <button class="shoot-btn overlay-btn" id="shootBtn" style="display: none;">
                             <span>🔫</span>
                             <span class="btn-label">Shoot</span>
                         </button>
                     </div>
                 </div>
                 
-                <div class="game-buttons">
-                    <button class="game-btn" id="startBtn">Start Game</button>
-                    <button class="game-btn" id="pauseBtn" style="display: none;">Pause</button>
+                <!-- Leaderboard -->
+                <div class="leaderboard-container">
+                    <h3 class="leaderboard-title">🏆 Leaderboard</h3>
+                    <div class="leaderboard-list" id="leaderboardList">
+                        <p class="no-scores">No scores yet. Be the first!</p>
+                    </div>
                 </div>
             </div>
         </div>
